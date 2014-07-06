@@ -86,18 +86,17 @@ class Band(RasterProxy):
 		self.shape = dataset.shape
 		self.nodata = self.__gdal__.GetNoDataValue()
 
-	def get_array(self, nodata=None, masked=True):
+	def get_array(self, nodata=None):
 		arr = self.__gdal__.ReadAsArray()
 		if nodata is None:
 			nodata = self.nodata #try to set gdal nodata value
-
-		if nodata == 'nan' and masked:
+		if nodata == 'nan':
 			return N.ma.array(arr, mask = N.isnan(arr))
-		if nodata is not None and masked:
-				return N.ma.masked_equal(arr,nodata)
-
-		if masked:
-			return N.ma.array(arr, mask=N.isnan(arr))
+		if nodata is not None:
+			try: 
+				arr[arr == nodata] = N.nan
+			except ValueError:
+				return arr
 		return arr # if all else fails
 
 	def get_pixel(self, x,y):
