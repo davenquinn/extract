@@ -12,7 +12,7 @@ from shapely.geometry import shape
 from shapely.ops import transform
 
 from .proj import Transformation
-import strategies
+import .strategies
 
 G.UseExceptions()
 
