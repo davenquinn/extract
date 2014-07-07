@@ -57,7 +57,7 @@ class RasterProxy(object):
 				x, y = [int(i) for i in x,y]
 			if z is None:
 				return x,y
-			else: 
+			else:
 				return x,y,z
 		return transform_geometry(project_coord, records)
 
@@ -74,7 +74,7 @@ class RasterProxy(object):
 			y = g[3] + g[4] * x + g[5] * y
 			if z is None:
 				return x,y
-			else: 
+			else:
 				return x,y,z
 		return transform_geometry(project_coord, records)
 
@@ -93,7 +93,7 @@ class Band(RasterProxy):
 		if nodata == 'nan':
 			return N.ma.array(arr, mask = N.isnan(arr))
 		if nodata is not None:
-			try: 
+			try:
 				arr[arr == nodata] = N.nan
 			except ValueError:
 				return arr
@@ -157,7 +157,12 @@ class Dataset(RasterProxy):
 		if bands is None:
 			bands = range(len(self))
 		bands = [b+1 for b in bands]
-		buffer=self.__gdal__.ReadRaster(int(x-1//window),int(y-1//window),window,window,band_list=bands)
+		buffer=self.__gdal__.ReadRaster(
+			int(x-1//window),
+			int(y-1//window),
+			window,
+			window,
+			band_list=bands)
 		arr = N.fromstring(buffer, dtype=self.dtype)
 		arr = arr.reshape((len(self), window, window))
 		arr = N.ma.masked_array(arr, arr==self.nodata)
@@ -177,4 +182,3 @@ class Dataset(RasterProxy):
 
 	def __len__(self):
 		return self.__gdal__.RasterCount
-		
