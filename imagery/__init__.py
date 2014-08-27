@@ -25,32 +25,14 @@ class open(object):
 	def __exit__(self, exception_type, exception_val, trace):
 		self.image.close()
 
-def transform_geometry(func, records):
-    """
-    Get pixel values using provided function.
-    .. http://sgillies.net/blog/1125/fiona-pyproj-shapely-in-a-functional-style/
-    """
-    point_handler = lambda coord: func(*coord)
-    ring_handler = lambda ring: [point_handler(c) for c in ring]
-    poly_handler = lambda rings: [ring_handler(r) for r in rings]
-    handlers = {
-    	"Point": point_handler,
-    	"LineString": ring_handler,
-    	"Polygon": poly_handler
-    }
-    for rec in records:
-        handler = handlers[rec['geometry']['type']]
-        rec["geometry"]["coordinates"] = handler(rec["geometry"]["coordinates"])
-        yield rec
-
 class RasterProxy(object):
 	@property
 	def geomatrix(self):
 		return self.__dataset__.__gdal__.GetGeoTransform()
 
-	def pixel_coordinates(self,records, snap=False):
-		g = self.geomatrix
+	def pixel_coordinates(self,geometry, snap=False):
 		def project_coord(x,y,z=None):
+			g = self.geomatrix
 			x = ((x - g[0])/g[1])
 			y = ((y - g[3])/g[5])
 			if snap:
@@ -59,9 +41,9 @@ class RasterProxy(object):
 				return x,y
 			else:
 				return x,y,z
-		return transform_geometry(project_coord, records)
+		return transform(project_coord, geometry)
 
-	def map_coordinates(self,records):
+	def map_coordinates(self,geometry):
 		"""
 		Takes records projected as pixels and converts them to map coordinates.
 		It is presumed that a position within each pixel is represented as a linear range.
@@ -76,7 +58,7 @@ class RasterProxy(object):
 				return x,y
 			else:
 				return x,y,z
-		return transform_geometry(project_coord, records)
+		return transform(project_coord, geometry)
 
 class Band(RasterProxy):
 	"""Wraps a GDAL raster band"""
@@ -103,12 +85,12 @@ class Band(RasterProxy):
 		structval=self.__gdal__.ReadRaster(px,py,1,1,buf_type=G.GDT_UInt16) #Assumes 16 bit int aka 'short'
 		return struct.unpack('h' , structval)[0]
 
-	def extract(self,records, pixel_coordinates=False, strategy=strategies.nearest):
+	def extract(self,geometry, pixel_coordinates=False, strategy=strategies.nearest):
 		"""
 		Project to pixel coordinates and extract raster values
 		If pixel_coordinates option is True, coordinates will be transformed to fractional pixels
 		"""
-		pixels = self.pixel_coordinates(records)
+		pixels = self.pixel_coordinates(geometry)
 		pixels = strategy(self.get_array(),pixels)
 		if pixel_coordinates:
 			return pixels

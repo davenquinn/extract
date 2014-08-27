@@ -20,11 +20,11 @@ from shapely.geometry import shape, mapping, asLineString
 def __factory__(order):
 	log.info("Initializing an interpolation function of order {0}".format(order))
 
-	def interpolate(array,features):
-		"""Interpolates features to the specified order"""
+	def interpolate(array,geometry):
+		"""Interpolates geometries to the specified order"""
 		def point_handler(coords):
 			return line_handler([coords])[0]
-			
+
 		def line_handler(coords):
 			coordinates = N.array(coords)
 			aligned = (coordinates - 0.5)[:,0:2].T[::-1]  # align fractional pixel coordinates to array
@@ -35,13 +35,11 @@ def __factory__(order):
 				coordinates = N.hstack((coordinates,z.reshape(len(z),1)))
 			return list(map(tuple, coordinates))
 
-		for feature in features:
-			if feature["geometry"]["type"] == "Point":
-				coords  = point_handler(feature["geometry"]["coordinates"])
-			else:
-				coords = line_handler(feature["geometry"]["coordinates"])
-			feature["geometry"]["coordinates"] = coords
-			yield feature
+		if geometry.geom_type == "Point":
+			geometry.coords  = point_handler(geometry.coords)
+		else:
+			geometry.coords = line_handler(geometry.coords)
+		return geometry
 	return interpolate
 
 nearest = __factory__(0)
