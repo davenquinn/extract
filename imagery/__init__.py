@@ -26,6 +26,8 @@ class open(object):
 		self.image.close()
 
 class RasterProxy(object):
+	from .area import create_mask, extract_area
+
 	@property
 	def geomatrix(self):
 		return self.__dataset__.__gdal__.GetGeoTransform()
@@ -64,6 +66,7 @@ class Band(RasterProxy):
 	"""Wraps a GDAL raster band"""
 	def __init__(self, dataset, index=0):
 		self.__dataset__ = dataset
+		self.index = index
 		self.__gdal__ = self.__dataset__.__gdal__.GetRasterBand(index+1)
 		self.shape = dataset.shape
 		self.nodata = self.__gdal__.GetNoDataValue()
@@ -82,30 +85,35 @@ class Band(RasterProxy):
 		return arr # if all else fails
 
 	def get_pixel(self, x,y):
+		"""Gets the value of a single pixel for every band"""
 		structval=self.__gdal__.ReadRaster(px,py,1,1,buf_type=G.GDT_UInt16) #Assumes 16 bit int aka 'short'
 		return struct.unpack('h' , structval)[0]
 
-	def extract(self,geometry, pixel_coordinates=False, strategy=strategies.nearest):
+	def extract(self, geometry,strategy=strategies.nearest):
 		"""
 		Project to pixel coordinates and extract raster values
-		If pixel_coordinates option is True, coordinates will be transformed to fractional pixels
 		"""
-		pixels = self.pixel_coordinates(geometry)
-		pixels = strategy(self.get_array(),pixels)
-		if pixel_coordinates:
-			return pixels
+		pixels = self.extract_pixels(self.pixel_coordinates(geometry))
+		return self.map_coordinates(pixels)
+
+	def extract_area(self, pixel_geometry):
+		""" Returns a list of x,y,value coordinates in a nx3 matrix.
+		"""
+		area = self.__dataset__.extract_area(pixel_geometry, bands=[self.index])
+		return area
+
+	def extract_pixels(self, pixel_geometry, strategy=strategies.nearest):
+		"""
+		Strategies don't currently mean anything for area geometries
+		"""
+		if pixel_geometry.area == 0:
+			return strategy(self.get_array(),pixel_geometry)
 		else:
-			return self.map_coordinates(pixels)
+			return self.extract_area(pixel_geometry)
 
-	def __str__(self):
-		return self.__gdal__.GetDescription()
-
-	def __len__(self):
-		return self.__gdal__.YSize
-
-	@property
-	def dtype(self):
-		return G.GetDataTypeName(self.__gdal__.DataType)
+	dtype = property(lambda self: G.GetDataTypeName(self.__gdal__.DataType))
+	__str__ = lambda self: self.__gdal__.GetDescription()
+	__len__ = lambda self: self.__gdal__.YSize
 
 
 class Dataset(RasterProxy):
