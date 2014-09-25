@@ -4,30 +4,27 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 install_requires = [
     'numpy',
-    'scipy',
-    'matplotlib',
-    'fiona',
+    'rasterio',
     'shapely',
     'pyproj',
-    'gdal'
     ]
 
 setup(
-    name='Imagery',
+    name='extract',
     version=0.1,
-    description="Imagery is a thin wrapper to the Python GDAL bindings.",
+    description="Extracting your polygons from geospatial rasters.",
     license='MIT',
     keywords='gis data computation raster images maps',
     author='Daven Quinn',
     author_email='dev@davenquinn.com',
     maintainer='Daven Quinn',
     maintainer_email='dev@davenquinn.com',
-    url='http://github.com/davenquinn/Imagery',
+    url='http://github.com/davenquinn/extract',
     install_requires=install_requires,
     tests_require=['nose'],
     test_suite='nose.collector',
     packages=find_packages(),
-    package_dir={'imagery':'imagery'},
+    package_dir={'imagery':'.'},
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Science/Research',
