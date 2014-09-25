@@ -6,6 +6,7 @@ install_requires = [
     'numpy',
     'rasterio',
     'shapely',
+    'pillow',
     'pyproj',
     ]
 
