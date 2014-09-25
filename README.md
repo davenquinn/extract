@@ -32,7 +32,7 @@ Then you can extract the shape from a `rasterio` dataset.
 
 >>> with rasterio.open(hrsc_mosaic) as dem:
         array = extract_area(dem,
-            to_shape(landing_ellipse),
+            landing_ellipse,
             feature_crs=syrtis_tm)
 
 >>> array.min(), array.max()
@@ -62,6 +62,16 @@ For now, this can be installed as a standalone module:
 ```
 ~ pip install git+https://github.com/davenquinn/extract.git
 ```
+
+## Todo
+
+- Punch out inner rings of polygons
+- Test
+- Get rid of `PIL` dependency; I think there's some `rasterio`
+  functions that can be used to mask the image instead.
+- Extract points and lines with same interface (possibly with linear interpolation). I
+  already have some code for this but I'm not sure how to integrate
+it currently...
 
 I'd like to see this functionality integrated into `rasterio` itself;
 stay tuned!
