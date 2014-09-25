@@ -4,6 +4,15 @@ Several methods for computing windowed spectra of a CRISM image given a series o
 import rasterio
 import numpy as N
 from PIL import Image, ImageDraw
+from shapely.ops import transform
+from functools import partial
+
+def transformation(source, sink):
+    """Returns a shapely-compatible coordinate transformation between two coordinate systems.
+    The input coordinates should be represented by mappings of CRS parameters.
+    """
+    from pyproj import Proj, transform
+    return partial(transform, Proj(source), Proj(sink))
 
 def create_pixel_transform(dataset, snap=False):
     """ Returns a function that transforms map coordinates to pixel coordinates"""
@@ -26,7 +35,7 @@ def create_mask(dataset, geometry):
     # PIL regrettably works in the reverse coordinate order
     # But shapely shapes (and other geo-things) are already x-first
     img = Image.new('L', (width, height), 0)
-    ImageDraw.Draw(img).polygon(pixels, outline=1, fill=1)
+    ImageDraw.Draw(img).polygon(pixels, outline=0, fill=1)
     arr =  N.array(img, dtype=bool)
     assert arr.shape == dataset.shape
     return arr
@@ -62,11 +71,24 @@ def mask_shape(mask,axis=0):
 
 class OffsetArray(N.ma.MaskedArray): pass
 
-def extract_area(dataset, geometry, indexes=1, **kwargs):
+def extract_area(dataset, geometry, indexes=1, pixels=False,**kwargs):
+    """ Extract an area from one or several bands of a `rasterio` dataset.
+        Returns a Numpy masked array that is the size of the overlapped area.
+        An `offset` parameter that contains the (y,x) offset of
+        the geometry from the image origin is contained.
+
+        It might be more advisable to create a custom object in the future, with
+        methods such as `bbox` or `pixel_bounds`...
     """
-    Compute a spectrum using the basic GDAL driver to read a single band of the spectrum.
-    This is faster than the rasterio version and is the default.
-    """
+    feature_crs = kwargs.pop("feature_crs", None)
+    if feature_crs is not None:
+        projection = transformation(feature_crs, dataset.crs)
+        geometry = transform(projection, geometry)
+
+    if not pixels:
+        pixel_projection = create_pixel_transform(dataset)
+        geometry = transform(pixel_projection, geometry)
+
     mask = create_mask(dataset,geometry)
     trimmed_mask, offset = offset_mask(mask)
     yo,xo = offset
