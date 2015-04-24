@@ -2,6 +2,9 @@
 to allow the extraction of image pixels in areas corresponding to
 polygon geometries.
 
+It will probably be superseded over time by core `rasterio` functionality,
+but for now is useful for quick-and-dirty shape extraction.
+
 ## Usage
 
 Input takes shapely geometries and (optional) crs mapping for shape
