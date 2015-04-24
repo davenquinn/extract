@@ -96,7 +96,6 @@ def extract_area(dataset, geometry, indexes=1, pixels=False,**kwargs):
     for i in (0,1):
         assert N.allclose(trimmed_mask.sum(axis=i), N.trim_zeros(mask.sum(axis=i)))
 
-    #maskt = maskt.transpose() # Conform to GDAL's fascist X-first expectations
     try:
         nbands = len(indexes)
     except TypeError:
